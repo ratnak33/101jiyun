@@ -1,0 +1,29 @@
+{
+  "hero": {
+    "title": "Global Smart Logistics Platform",
+    "subtitle": "Seamless international shipping, warehousing, and AI-powered logistics solutions.",
+    "cta": "Get Started"
+  },
+  "services": {
+    "title": "Our Services",
+    "air": {
+      "title": "Air Freight",
+      "desc": "Fast and reliable global air shipping solutions."
+    },
+    "sea": {
+      "title": "Sea Freight",
+      "desc": "Cost-effective international shipping by sea."
+    },
+    "express": {
+      "title": "Express Delivery",
+      "desc": "Quick and efficient door-to-door delivery."
+    },
+    "warehouse": {
+      "title": "Global Warehousing",
+      "desc": "21 overseas warehouses for seamless logistics."
+    }
+  },
+  "chat": {
+    "placeholder": "Ask about logistics..."
+  }
+}
