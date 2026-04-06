@@ -16,14 +16,29 @@ const AIChat = () => {
   const [loading, setLoading] = useState(false);
 
   const bottomRef = useRef<HTMLDivElement | null>(null);
+  const typingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // ✅ Auto scroll
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
 
+  // ✅ Cleanup interval on unmount
+  useEffect(() => {
+    return () => {
+      if (typingIntervalRef.current) {
+        clearInterval(typingIntervalRef.current);
+      }
+    };
+  }, []);
+
   const handleSend = async () => {
     if (!input.trim()) return;
+
+    // Stop any previous typing
+    if (typingIntervalRef.current) {
+      clearInterval(typingIntervalRef.current);
+    }
 
     const userMessage: Message = { role: "user", text: input };
 
@@ -38,32 +53,36 @@ const AIChat = () => {
 
     setLoading(false);
 
-    typeWriterEffect(aiResponse);
+    typeWriterEffect(aiResponse || "No response");
   };
 
-  // ✅ Premium typing effect
+  // ✅ STABLE Typing Effect (NO CUT BUG)
   const typeWriterEffect = (text: string) => {
     let index = 0;
 
+    // Add empty AI message first
     setMessages((prev) => [...prev, { role: "ai", text: "" }]);
 
-    const interval = setInterval(() => {
-      index++;
-
+    typingIntervalRef.current = setInterval(() => {
       setMessages((prev) => {
         const updated = [...prev];
         const lastIndex = updated.length - 1;
 
-        updated[lastIndex] = {
-          role: "ai",
-          text: text.slice(0, index)
-        };
+        if (index < text.length) {
+          updated[lastIndex] = {
+            role: "ai",
+            text: text.substring(0, index + 1)
+          };
+          index++;
+        } else {
+          if (typingIntervalRef.current) {
+            clearInterval(typingIntervalRef.current);
+          }
+        }
 
         return updated;
       });
-
-      if (index >= text.length) clearInterval(interval);
-    }, 15);
+    }, 20);
   };
 
   return (
@@ -80,7 +99,7 @@ const AIChat = () => {
       {open && (
         <div className="fixed bottom-20 right-6 w-80 h-[28rem] bg-white/95 backdrop-blur-md shadow-2xl rounded-2xl flex flex-col border border-gray-200">
           {/* Header */}
-          <div className="p-3 bg-black text-white rounded-t-2xl text-sm font-medium tracking-wide">
+          <div className="p-3 bg-black text-white rounded-t-2xl text-sm font-medium">
             AI Assistant
           </div>
 

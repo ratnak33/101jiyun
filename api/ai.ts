@@ -17,7 +17,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`
         },
         body: JSON.stringify({
-          model: "mistralai/mistral-7b-instruct",
+          model: "openai/gpt-3.5-turbo",
           messages: [
             {
               role: "system",
@@ -30,9 +30,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               role: "user",
               content: message
             }
-          ],
-          max_tokens: 300,
-          temperature: 0.7
+          ]
         })
       }
     );
