@@ -4,6 +4,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const { message, lang } = req.body;
 
+    if (!message) {
+      return res.status(400).json({ reply: "Message is required" });
+    }
+
     const response = await fetch(
       "https://openrouter.ai/api/v1/chat/completions",
       {
@@ -33,11 +37,33 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const data = await response.json();
 
-    const reply = data?.choices?.[0]?.message?.content;
+    // 🔍 Debug log (helps if anything breaks)
+    console.log("FULL API RESPONSE:", JSON.stringify(data, null, 2));
 
-    res.status(200).json({ reply });
+    // ❌ If API returns error
+    if (data.error) {
+      console.error("API ERROR:", data.error);
+      return res.status(200).json({
+        reply: "AI service error. Please try again later."
+      });
+    }
+
+    // ❌ If structure is unexpected
+    if (!data?.choices || !data.choices.length) {
+      console.error("INVALID RESPONSE STRUCTURE:", data);
+      return res.status(200).json({
+        reply: "No response from AI. Try again."
+      });
+    }
+
+    // ✅ Safe extraction
+    const reply = data.choices[0]?.message?.content || "No response";
+
+    return res.status(200).json({ reply });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ reply: "Server error" });
+    console.error("SERVER ERROR:", error);
+    return res.status(500).json({
+      reply: "Server error. Please try again."
+    });
   }
 }
