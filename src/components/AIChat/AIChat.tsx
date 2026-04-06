@@ -16,29 +16,14 @@ const AIChat = () => {
   const [loading, setLoading] = useState(false);
 
   const bottomRef = useRef<HTMLDivElement | null>(null);
-  const typingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // ✅ Auto scroll
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
 
-  // ✅ Cleanup interval on unmount
-  useEffect(() => {
-    return () => {
-      if (typingIntervalRef.current) {
-        clearInterval(typingIntervalRef.current);
-      }
-    };
-  }, []);
-
   const handleSend = async () => {
     if (!input.trim()) return;
-
-    // Stop any previous typing
-    if (typingIntervalRef.current) {
-      clearInterval(typingIntervalRef.current);
-    }
 
     const userMessage: Message = { role: "user", text: input };
 
@@ -53,36 +38,11 @@ const AIChat = () => {
 
     setLoading(false);
 
-    typeWriterEffect(aiResponse || "No response");
-  };
-
-  // ✅ STABLE Typing Effect (NO CUT BUG)
-  const typeWriterEffect = (text: string) => {
-    let index = 0;
-
-    // Add empty AI message first
-    setMessages((prev) => [...prev, { role: "ai", text: "" }]);
-
-    typingIntervalRef.current = setInterval(() => {
-      setMessages((prev) => {
-        const updated = [...prev];
-        const lastIndex = updated.length - 1;
-
-        if (index < text.length) {
-          updated[lastIndex] = {
-            role: "ai",
-            text: text.substring(0, index + 1)
-          };
-          index++;
-        } else {
-          if (typingIntervalRef.current) {
-            clearInterval(typingIntervalRef.current);
-          }
-        }
-
-        return updated;
-      });
-    }, 20);
+    // ✅ Direct render (NO typing effect → no bugs)
+    setMessages((prev) => [
+      ...prev,
+      { role: "ai", text: aiResponse || "No response" }
+    ]);
   };
 
   return (
@@ -118,12 +78,10 @@ const AIChat = () => {
               </div>
             ))}
 
-            {/* Typing indicator */}
+            {/* Loading */}
             {loading && (
-              <div className="flex items-center gap-1 text-gray-500 text-sm">
-                <span className="animate-bounce">.</span>
-                <span className="animate-bounce delay-100">.</span>
-                <span className="animate-bounce delay-200">.</span>
+              <div className="text-gray-500 text-sm animate-pulse">
+                AI is thinking...
               </div>
             )}
 
