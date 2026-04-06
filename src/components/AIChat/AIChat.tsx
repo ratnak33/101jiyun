@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { sendMessageToAI } from "../../services/aiService";
 import { useTranslation } from "react-i18next";
 
@@ -14,6 +14,13 @@ const AIChat = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const bottomRef = useRef<HTMLDivElement | null>(null);
+
+  // ✅ Auto scroll
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, loading]);
 
   const handleSend = async () => {
     if (!input.trim()) return;
@@ -34,27 +41,29 @@ const AIChat = () => {
     typeWriterEffect(aiResponse);
   };
 
-  // ✨ Typing Effect
+  // ✅ Premium typing effect
   const typeWriterEffect = (text: string) => {
     let index = 0;
-    let currentText = "";
+
+    setMessages((prev) => [...prev, { role: "ai", text: "" }]);
 
     const interval = setInterval(() => {
-      currentText += text[index];
       index++;
 
       setMessages((prev) => {
-        const last = prev[prev.length - 1];
+        const updated = [...prev];
+        const lastIndex = updated.length - 1;
 
-        if (last?.role === "ai") {
-          return [...prev.slice(0, -1), { role: "ai", text: currentText }];
-        }
+        updated[lastIndex] = {
+          role: "ai",
+          text: text.slice(0, index)
+        };
 
-        return [...prev, { role: "ai", text: currentText }];
+        return updated;
       });
 
-      if (index === text.length) clearInterval(interval);
-    }, 20);
+      if (index >= text.length) clearInterval(interval);
+    }, 15);
   };
 
   return (
@@ -62,40 +71,48 @@ const AIChat = () => {
       {/* Floating Button */}
       <button
         onClick={() => setOpen(!open)}
-        className="fixed bottom-6 right-6 bg-black text-white px-4 py-3 rounded-full shadow-lg"
+        className="fixed bottom-6 right-6 bg-black text-white px-4 py-3 rounded-full shadow-lg hover:scale-105 transition"
       >
         💬
       </button>
 
       {/* Chat Box */}
       {open && (
-        <div className="fixed bottom-20 right-6 w-80 h-96 bg-white shadow-xl rounded-xl flex flex-col">
+        <div className="fixed bottom-20 right-6 w-80 h-[28rem] bg-white/95 backdrop-blur-md shadow-2xl rounded-2xl flex flex-col border border-gray-200">
           {/* Header */}
-          <div className="p-3 bg-black text-white rounded-t-xl">
+          <div className="p-3 bg-black text-white rounded-t-2xl text-sm font-medium tracking-wide">
             AI Assistant
           </div>
 
           {/* Messages */}
-          <div className="flex-1 p-3 overflow-y-auto space-y-2">
+          <div className="flex-1 p-4 overflow-y-auto space-y-3">
             {messages.map((msg, index) => (
               <div
                 key={index}
-                className={`p-2 rounded-lg max-w-[80%] break-words whitespace-pre-wrap ${
+                className={`px-3 py-2 rounded-2xl text-sm max-w-[80%] break-words whitespace-pre-wrap ${
                   msg.role === "user"
                     ? "bg-black text-white ml-auto"
-                    : "bg-gray-200 text-black"
+                    : "bg-gray-100 text-black"
                 }`}
               >
                 {msg.text}
               </div>
             ))}
 
-            {/* Loading */}
-            {loading && <div className="text-gray-500 text-sm">Typing...</div>}
+            {/* Typing indicator */}
+            {loading && (
+              <div className="flex items-center gap-1 text-gray-500 text-sm">
+                <span className="animate-bounce">.</span>
+                <span className="animate-bounce delay-100">.</span>
+                <span className="animate-bounce delay-200">.</span>
+              </div>
+            )}
+
+            <div ref={bottomRef} />
           </div>
 
           {/* Input */}
-          <div className="p-2 flex gap-2">
+          <div className="p-3 border-t flex gap-2">
             <textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
@@ -105,13 +122,14 @@ const AIChat = () => {
                   handleSend();
                 }
               }}
-              className="flex-1 border rounded px-2 py-1 text-sm resize-none"
+              className="flex-1 border rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-black"
               rows={1}
               placeholder={t("chat.placeholder")}
             />
+
             <button
               onClick={handleSend}
-              className="bg-black text-white px-3 rounded"
+              className="bg-black text-white px-4 rounded-lg text-sm hover:bg-gray-800 transition"
             >
               Send
             </button>
